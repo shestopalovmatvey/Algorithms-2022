@@ -2,6 +2,13 @@
 
 package lesson1
 
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileReader
+import java.lang.IllegalArgumentException
+import java.text.SimpleDateFormat
+import kotlin.math.absoluteValue
+
 /**
  * Сортировка времён
  *
@@ -33,7 +40,44 @@ package lesson1
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortTimes(inputName: String, outputName: String) {
-    TODO()
+    val check = Regex("""^(0[1-9]|1[0-2]):([0-5]\d):([0-5]\d)\s(A|P)M""")
+    val amTime = mutableListOf<String>()
+    val pmTime = mutableListOf<String>()
+    val writer = File(outputName).bufferedWriter()
+    for (line in File(inputName).readLines()) {
+        if (check.matches(line)) {
+            var time = line
+            if (time.startsWith("12")) {
+                time = time.replaceFirst("12", "00")
+            }
+            if (time.endsWith("AM")) {
+                amTime.add(time)
+            } else {
+                pmTime.add(time)
+            }
+        } else {
+            throw IllegalArgumentException()
+        }
+    }
+    amTime.sort()
+    pmTime.sort()
+    for (line in amTime) {
+        var time = line
+        if (time.startsWith("00")) {
+            time = time.replaceFirst("00", "12")
+        }
+        writer.write(time)
+        writer.newLine()
+    }
+    for (line in pmTime) {
+        var time = line
+        if (time.startsWith("00")) {
+            time = time.replaceFirst("00", "12")
+        }
+        writer.write(time)
+        writer.newLine()
+    }
+    writer.close()
 }
 
 /**
@@ -63,7 +107,32 @@ fun sortTimes(inputName: String, outputName: String) {
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortAddresses(inputName: String, outputName: String) {
-    TODO()
+    val setAddresses =
+        sortedMapOf<String, MutableSet<String>>(compareBy<String> { it.split(" ")[0] }.thenBy
+        { it.split(" ")[1].toInt() })
+    val reg = Regex("""[а-яА-ЯёЁ]+\s[а-яА-ЯёЁ]+\s-[а-яА-ЯёЁ]+\s\d+""")
+    val writer = File(outputName).bufferedWriter()
+    for (line in File(inputName).readLines()) {
+        if (!reg.matches(line)) {
+            val address = line.split(" - ")
+            val nameList = mutableSetOf<String>()
+            nameList.add(address[0])
+            if (setAddresses.contains(address[1])) {
+                setAddresses[address[1]]?.add(address[0])
+            } else {
+                setAddresses[address[1]] = nameList
+            }
+        } else {
+            throw IllegalArgumentException()
+        }
+    }
+    writer.use {
+        for ((key, value) in setAddresses) {
+            it.write(key + " - " + value.sorted().joinToString(", "))
+            it.newLine()
+        }
+    }
+    writer.close()
 }
 
 /**
@@ -97,7 +166,22 @@ fun sortAddresses(inputName: String, outputName: String) {
  * 121.3
  */
 fun sortTemperatures(inputName: String, outputName: String) {
-    TODO()
+    val reg = Regex("""-?\d+\.\d""")
+    val tempList = mutableListOf<Double>()
+    val writer = File(outputName).bufferedWriter()
+    for (line in File(inputName).readLines()) {
+        if (reg.matches(line)) {
+            tempList.add(line.toDouble())
+        } else {
+            throw IllegalArgumentException()
+        }
+    }
+    tempList.sort()
+    for (i in tempList) {
+        writer.write(i.toString())
+        writer.newLine()
+    }
+    writer.close()
 }
 
 /**
