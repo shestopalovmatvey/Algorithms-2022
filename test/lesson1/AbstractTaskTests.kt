@@ -5,9 +5,11 @@ import util.PerfResult
 import util.estimate
 import java.io.BufferedWriter
 import java.io.File
+import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.math.abs
 import kotlin.system.measureNanoTime
+import kotlin.test.assertFailsWith
 
 abstract class AbstractTaskTests : AbstractFileTests() {
 
@@ -51,6 +53,21 @@ abstract class AbstractTaskTests : AbstractFileTests() {
         } finally {
             File("temp.txt").delete()
         }
+        try {
+            sortTimes("input/time_in4.txt", "temp.txt")
+            assertFileContent(
+                "temp.txt", """
+                     12:00:00 AM
+                     12:00:31 AM
+                     12:40:31 AM
+                     09:26:57 AM
+                     11:05:03 AM
+                     12:00:00 PM
+                """.trimIndent()
+            )
+        } finally {
+            File("temp.txt").delete()
+        }
     }
 
     protected fun sortAddresses(sortAddresses: (String, String) -> Unit) {
@@ -82,6 +99,11 @@ abstract class AbstractTaskTests : AbstractFileTests() {
         try {
             sortAddresses("input/empty.txt", "temp.txt")
             assertFileContent("temp.txt", "")
+        } finally {
+            File("temp.txt").delete()
+        }
+        try {
+            assertFailsWith<IllegalArgumentException> { sortAddresses("input/addr_in4.txt", "temp.txt") }
         } finally {
             File("temp.txt").delete()
         }
@@ -133,6 +155,20 @@ abstract class AbstractTaskTests : AbstractFileTests() {
         try {
             sortTemperatures("input/empty.txt", "temp.txt")
             assertFileContent("temp.txt", "")
+        } finally {
+            File("temp.txt").delete()
+        }
+        try {
+            sortTemperatures("input/temp_in2.txt", "temp.txt")
+            assertFileContent(
+                "temp.txt", """
+                    -12.6
+                    0.0
+                    0.0
+                    24.7
+                    121.3
+                """.trimIndent()
+            )
         } finally {
             File("temp.txt").delete()
         }
