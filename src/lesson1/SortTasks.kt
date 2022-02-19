@@ -3,6 +3,7 @@
 package lesson1
 
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.File
 import java.io.FileReader
 import java.lang.IllegalArgumentException
@@ -46,6 +47,7 @@ fun sortTimes(inputName: String, outputName: String) {
     val check = Regex("""^(0[1-9]|1[0-2]):([0-5]\d):([0-5]\d)\s(A|P)M""")
     val amTime = mutableListOf<String>()
     val pmTime = mutableListOf<String>()
+    val sumTime = mutableListOf<String>()
     val writer = File(outputName).bufferedWriter()
     for (line in File(inputName).readLines()) {
         if (check.matches(line)) {
@@ -59,28 +61,28 @@ fun sortTimes(inputName: String, outputName: String) {
                 pmTime.add(time)
             }
         } else {
+            writer.close()
             throw IllegalArgumentException()
         }
+
     }
     amTime.sort()
     pmTime.sort()
-    for (line in amTime) {
-        var time = line
-        if (time.startsWith("00")) {
-            time = time.replaceFirst("00", "12")
-        }
-        writer.write(time)
-        writer.newLine()
-    }
-    for (line in pmTime) {
-        var time = line
-        if (time.startsWith("00")) {
-            time = time.replaceFirst("00", "12")
-        }
-        writer.write(time)
-        writer.newLine()
-    }
+    sumTime.addAll(amTime)
+    sumTime.addAll(pmTime)
+    write(sumTime, writer)
     writer.close()
+}
+
+fun write(list: MutableList<String>, writer: BufferedWriter) {
+    for (line in list) {
+        var time = line
+        if (time.startsWith("00")) {
+            time = time.replaceFirst("00", "12")
+        }
+        writer.write(time)
+        writer.newLine()
+    }
 }
 
 /**
