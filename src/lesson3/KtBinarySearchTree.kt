@@ -7,7 +7,7 @@ import kotlin.math.max
 class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), CheckableSortedSet<T> {
 
     private class Node<T>(
-        val value: T
+        var value: T
     ) {
         var left: Node<T>? = null
         var right: Node<T>? = null
@@ -91,6 +91,18 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
     inner class BinarySearchTreeIterator internal constructor() : MutableIterator<T> {
 
+        private val stack = ArrayDeque<Node<T>>()
+        private lateinit var prev: Node<T>
+        private lateinit var prevParent: Node<T>
+
+        init {
+            var curr = root
+            while (curr != null) {
+                stack.push(curr)
+                curr = curr.left
+            }
+        }
+
         /**
          * Проверка наличия следующего элемента
          *
@@ -101,10 +113,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          *
          * Средняя
          */
-        override fun hasNext(): Boolean {
-            // TODO
-            throw NotImplementedError()
-        }
+        override fun hasNext() = !stack.isEmpty()
 
         /**
          * Получение следующего элемента
@@ -120,8 +129,18 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Средняя
          */
         override fun next(): T {
-            // TODO
-            throw NotImplementedError()
+            if (stack.isEmpty()) {
+                throw NoSuchElementException()
+            }
+            val popped: Node<T> = stack.pop()
+            prev = popped
+            prevParent = if (stack.isEmpty()) root!! else stack.peek()
+            var curr = popped.right
+            while (curr != null) {
+                stack.push(curr)
+                curr = curr.left
+            }
+            return popped.value
         }
 
         /**
