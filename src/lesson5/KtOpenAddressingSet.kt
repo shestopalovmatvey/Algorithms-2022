@@ -14,6 +14,8 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
 
     override var size: Int = 0
 
+    private val deletedIndexes = mutableSetOf<Int>()
+
     /**
      * Индекс в таблице, начиная с которого следует искать данный элемент
      */
@@ -24,15 +26,20 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
     /**
      * Проверка, входит ли данный элемент в таблицу
      */
+    //Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
     override fun contains(element: T): Boolean {
-        var index = element.startingIndex()
+        val startingIndex = element.startingIndex();
+        var index = startingIndex;
         var current = storage[index]
         while (current != null) {
-            if (current == element) {
+            if (current == element && !deletedIndexes.contains(index)) {
                 return true
             }
             index = (index + 1) % capacity
             current = storage[index]
+            if (index == startingIndex) {
+                return false
+            }
         }
         return false
     }
@@ -47,19 +54,27 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      * Обычно Set не предполагает ограничения на размер и подобных контрактов,
      * но в данном случае это было введено для упрощения кода.
      */
+    //Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
     override fun add(element: T): Boolean {
         val startingIndex = element.startingIndex()
         var index = startingIndex
+        var firstDeletedIndex: Int? = null
         var current = storage[index]
+
         while (current != null) {
-            if (current == element) {
+            if (current == element && !deletedIndexes.contains(index)) {
                 return false
+            }
+            if (deletedIndexes.contains(index) && firstDeletedIndex == null) {
+                firstDeletedIndex = index;
             }
             index = (index + 1) % capacity
             check(index != startingIndex) { "Table is full" }
             current = storage[index]
         }
+        index = firstDeletedIndex ?: index
         storage[index] = element
+        deletedIndexes.remove(index)
         size++
         return true
     }
@@ -75,8 +90,24 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      *
      * Средняя
      */
+    //Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
     override fun remove(element: T): Boolean {
-        TODO("not implemented")
+        val startingIndex = element.startingIndex();
+        var index = startingIndex
+        var current = storage[index]
+        while (current != null) {
+            if (current == element && !deletedIndexes.contains(index)) {
+                deletedIndexes.add(index)
+                size--
+                return true
+            }
+            index = (index + 1) % capacity
+            if (index == startingIndex) {
+                return false
+            }
+            current = storage[index]
+        }
+        return false
     }
 
     /**
@@ -90,6 +121,51 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      * Средняя (сложная, если поддержан и remove тоже)
      */
     override fun iterator(): MutableIterator<T> {
-        TODO("not implemented")
+        return SetIterator()
+    }
+
+    private inner class SetIterator<T> : MutableIterator<T> {
+        var next: Any?
+        var consideredIndex = 0
+        var removableIndex: Int? = null
+
+        init {
+            next = setNext()
+        }
+
+        //Трудоёмоксть O(1)
+        override fun hasNext() = next != null
+
+        //Трудоёмкость O(1 / A), где A = size / capacity - коэфициент заполнения таблицы
+        override fun next(): T {
+            if (next == null) {
+                throw NoSuchElementException()
+            }
+            val returnedNext = next
+            removableIndex = consideredIndex++
+            next = setNext()
+            return returnedNext as T
+        }
+
+        //Трудоемкость O(1)
+        override fun remove() {
+            check(removableIndex != null)
+            deletedIndexes.add(removableIndex!!)
+            size--
+            removableIndex = -1
+        }
+
+        private fun setNext(): Any? {
+            if (consideredIndex == storage.size) {
+                return null
+            }
+            while (storage[consideredIndex] == null || deletedIndexes.contains(consideredIndex)) {
+                consideredIndex++
+                if (consideredIndex == storage.size) {
+                    return null
+                }
+            }
+            return storage[consideredIndex]
+        }
     }
 }
