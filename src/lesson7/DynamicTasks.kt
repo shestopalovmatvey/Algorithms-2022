@@ -2,6 +2,9 @@
 
 package lesson7
 
+import java.util.*
+import kotlin.collections.ArrayDeque
+
 /**
  * Наибольшая общая подпоследовательность.
  * Средняя
@@ -14,8 +17,39 @@ package lesson7
  * Если есть несколько самых длинных общих подпоследовательностей, вернуть любую из них.
  * При сравнении подстрок, регистр символов *имеет* значение.
  */
+
 fun longestCommonSubSequence(first: String, second: String): String {
-    TODO()
+    //Трудоёмкость O(n^2)
+    //Ресурсоёмкость O(n)
+    val F = Array(first.length + 1) { IntArray(second.length + 1) }
+    for (i in first.indices) {
+        for (j in second.indices) {
+            if (first[i] == second[j]) {
+                F[i + 1][j + 1] = F[i][j] + 1
+            } else {
+                F[i + 1][j + 1] = Math.max(F[i][j + 1], F[i + 1][j])
+            }
+        }
+    }
+    var i = first.length
+    var j = second.length
+    val answer = StringBuilder()
+    while (F[i][j] > 0) {
+        when {
+            F[i][j] == F[i - 1][j] -> {
+                i -= 1
+            }
+            F[i][j] == F[i][j - 1] -> {
+                j -= 1
+            }
+            else -> {
+                answer.insert(0, first[i - 1])
+                i -= 1
+                j -= 1
+            }
+        }
+    }
+    return answer.toString()
 }
 
 /**
@@ -30,10 +64,47 @@ fun longestCommonSubSequence(first: String, second: String): String {
  * то вернуть ту, в которой числа расположены раньше (приоритет имеют первые числа).
  * В примере ответами являются 2, 8, 9, 12 или 2, 5, 9, 12 -- выбираем первую из них.
  */
-fun longestIncreasingSubSequence(list: List<Int>): List<Int> {
-    TODO()
-}
 
+fun longestIncreasingSubSequence(list: List<Int>): List<Int?> {
+    //Трудоёмкость O(n^2)
+    //Ресурсоёмкость O(n)
+    val emptyList: MutableList<Int?> = mutableListOf()
+    if (list.isEmpty()) {
+        return emptyList
+    }
+    val d = IntArray(list.size)
+    d[0] = 1
+    for (i in 1 until list.size) {
+        var longest = 0
+        for (j in i - 1 downTo 0) {
+            if (list[i] >= list[j] && d[j] >= longest) {
+                longest = d[j]
+            }
+        }
+        d[i] = longest + 1
+    }
+    var max = 1
+    var maxI = 0
+    for (i in 1 until list.size) {
+        if (d[i] > max) {
+            max = d[i]
+            maxI = i
+        }
+    }
+    val listAnswer = mutableListOf<Int?>()
+    while (max > 0) {
+        val last = maxI
+        listAnswer.add(0, list[maxI])
+        max--
+        for (i in 0 until maxI) {
+            if (d[i] == max && list[i] < list[last]) {
+                maxI = i
+                break
+            }
+        }
+    }
+    return listAnswer
+}
 /**
  * Самый короткий маршрут на прямоугольном поле.
  * Средняя
