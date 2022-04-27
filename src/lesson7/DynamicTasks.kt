@@ -2,9 +2,6 @@
 
 package lesson7
 
-import java.util.*
-import kotlin.collections.ArrayDeque
-
 /**
  * Наибольшая общая подпоследовательность.
  * Средняя
@@ -19,27 +16,27 @@ import kotlin.collections.ArrayDeque
  */
 
 fun longestCommonSubSequence(first: String, second: String): String {
-    //Трудоёмкость O(n^2)
+    //Трудоёмкость O(n*m) n-длинна одной строки, m-другой
     //Ресурсоёмкость O(n)
-    val F = Array(first.length + 1) { IntArray(second.length + 1) }
+    val arrayOfIntArrays = Array(first.length + 1) { IntArray(second.length + 1) }
     for (i in first.indices) {
         for (j in second.indices) {
             if (first[i] == second[j]) {
-                F[i + 1][j + 1] = F[i][j] + 1
+                arrayOfIntArrays[i + 1][j + 1] = arrayOfIntArrays[i][j] + 1
             } else {
-                F[i + 1][j + 1] = Math.max(F[i][j + 1], F[i + 1][j])
+                arrayOfIntArrays[i + 1][j + 1] = Math.max(arrayOfIntArrays[i][j + 1], arrayOfIntArrays[i + 1][j])
             }
         }
     }
     var i = first.length
     var j = second.length
     val answer = StringBuilder()
-    while (F[i][j] > 0) {
+    while (arrayOfIntArrays[i][j] > 0) {
         when {
-            F[i][j] == F[i - 1][j] -> {
+            arrayOfIntArrays[i][j] == arrayOfIntArrays[i - 1][j] -> {
                 i -= 1
             }
-            F[i][j] == F[i][j - 1] -> {
+            arrayOfIntArrays[i][j] == arrayOfIntArrays[i][j - 1] -> {
                 j -= 1
             }
             else -> {

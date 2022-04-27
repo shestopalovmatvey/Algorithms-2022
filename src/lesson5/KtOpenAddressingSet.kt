@@ -14,7 +14,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
 
     override var size: Int = 0
 
-    private val deletedIndexes = mutableSetOf<Int>()
+    private val deletedIndexes = Array(capacity) { false }
 
     /**
      * Индекс в таблице, начиная с которого следует искать данный элемент
@@ -26,13 +26,13 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
     /**
      * Проверка, входит ли данный элемент в таблицу
      */
-    //Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
+//Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
     override fun contains(element: T): Boolean {
-        val startingIndex = element.startingIndex();
-        var index = startingIndex;
+        val startingIndex = element.startingIndex()
+        var index = startingIndex
         var current = storage[index]
         while (current != null) {
-            if (current == element && !deletedIndexes.contains(index)) {
+            if (current == element && !deletedIndexes[index]) {
                 return true
             }
             index = (index + 1) % capacity
@@ -54,7 +54,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      * Обычно Set не предполагает ограничения на размер и подобных контрактов,
      * но в данном случае это было введено для упрощения кода.
      */
-    //Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
+//Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
     override fun add(element: T): Boolean {
         val startingIndex = element.startingIndex()
         var index = startingIndex
@@ -62,11 +62,11 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         var current = storage[index]
 
         while (current != null) {
-            if (current == element && !deletedIndexes.contains(index)) {
+            if (current == element && !deletedIndexes[index]) {
                 return false
             }
-            if (deletedIndexes.contains(index) && firstDeletedIndex == null) {
-                firstDeletedIndex = index;
+            if (deletedIndexes[index] && firstDeletedIndex == null) {
+                firstDeletedIndex = index
             }
             index = (index + 1) % capacity
             check(index != startingIndex) { "Table is full" }
@@ -74,7 +74,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         }
         index = firstDeletedIndex ?: index
         storage[index] = element
-        deletedIndexes.remove(index)
+        deletedIndexes[index] = false
         size++
         return true
     }
@@ -90,14 +90,14 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      *
      * Средняя
      */
-    //Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
+//Трудоёмкость O((1 / (1 - A))), где A = (size / capacity) - коэфициент заполнения таблицы, из лекции
     override fun remove(element: T): Boolean {
-        val startingIndex = element.startingIndex();
+        val startingIndex = element.startingIndex()
         var index = startingIndex
         var current = storage[index]
         while (current != null) {
-            if (current == element && !deletedIndexes.contains(index)) {
-                deletedIndexes.add(index)
+            if (current == element && !deletedIndexes[index]) {
+                deletedIndexes[index] = true
                 size--
                 return true
             }
@@ -150,7 +150,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         //Трудоемкость O(1)
         override fun remove() {
             check(removableIndex != null)
-            deletedIndexes.add(removableIndex!!)
+            deletedIndexes[removableIndex!!] = true
             size--
             removableIndex = -1
         }
@@ -159,7 +159,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
             if (consideredIndex == storage.size) {
                 return null
             }
-            while (storage[consideredIndex] == null || deletedIndexes.contains(consideredIndex)) {
+            while (storage[consideredIndex] == null || deletedIndexes[consideredIndex]) {
                 consideredIndex++
                 if (consideredIndex == storage.size) {
                     return null
